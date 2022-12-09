@@ -1,0 +1,23 @@
+{
+  "name": "fry-import-old-data",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "import-regions": "node src/import-regions",
+    "import-operators": "node src/import-operators",
+    "import-stations": "node src/import-stations",
+    "import-lines": "node src/import-lines"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "boxen": "^7.0.0",
+    "chalk": "^5.0.1",
+    "dotenv": "^16.0.1",
+    "pg": "^8.7.3",
+    "uuid": "^8.3.2"
+  },
+  "type": "module"
+}
