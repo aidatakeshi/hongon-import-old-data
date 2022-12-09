@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
 import * as $ from './common.js';
-import { v4 as uuid } from 'uuid';
 
 const {client_old, client_new} = await $.getConnection();
 
@@ -36,7 +35,7 @@ for (let i = 0; i < stations.length; i++){
         name_chi: item.name_chi,
         name_eng: item.name_eng,
         x: $.getLongitude(item.x),
-        y: $.getLatitude(item.y),
+        y: $.getLatitude(item.y), 
         altitude_m: item.height_m,
         tracks: item.tracks,
         is_major: item.major,
