@@ -119,7 +119,7 @@ for (let id in lines){
     for (let line_sub of line_subs){
 
         //Prepare Sections -> Stations
-        const stations = (line_stations[line.id] || []).map(section => {
+        const stations = (line_stations[line_sub.id] || []).map(section => {
             if (!Array.isArray(section.segments)) section.segments = [];
             return {
                 id: section.id,
@@ -134,9 +134,9 @@ for (let id in lines){
                     y1: $.getLatitudeDelta(segment.y1),
                 })),
                 scheduling: {},
+                distance_km: section.distance_km,
+                mileage_km: section.mileage_km,
                 _data: {
-                    distance_km: section.distance_km,
-                    mileage_km: section.mileage_km,
                     x_min: !section.segments.length ? null
                             : $.getLongitude(Math.min(...section.segments.map(segment => segment.x))),
                     x_max: !section.segments.length ? null
@@ -167,6 +167,7 @@ for (let id in lines){
             remarks: line_sub.remarks,
             max_speed_kph: line_sub.max_speed_kph,
             stations: stations,
+            sort_in_line: subline_name_chi ? 2 : 1,
             _data: {
                 length_km: line_sub.length_km,
                 x_min: $.getLongitude(line_sub.x_min),

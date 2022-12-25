@@ -42,7 +42,11 @@ console.log("");
  * operators
  */
 
-const res2 = await client_old.query('SELECT * FROM operators', []);
+const res2 = await client_old.query(`
+    SELECT * FROM operators
+    ORDER BY (SELECT sort FROM operator_types WHERE operator_types.id = operators.operator_type_id) ASC,
+    name_eng ASC
+`, []);
 const operators = res2.rows;
 
 //Remove Old Items
@@ -63,6 +67,7 @@ for (let i = 0; i < operators.length; i++){
         remarks: item.remarks,
         color: item.color,
         color_text: item.color_text,
+        sort: (i + 1),
     });
     console.log(chalk.yellow(`#${i}: `) + `${item.name_chi} / ${item.name_eng}`);
 }
