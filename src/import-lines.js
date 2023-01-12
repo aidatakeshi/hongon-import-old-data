@@ -81,10 +81,9 @@ for (let item of res3.rows){
 
 //Remove Old Items
 await client_new.query('TRUNCATE hongon_hongon_lines', []);
-await client_new.query('TRUNCATE hongon_hongon_line_sections', []);
 
 //Insert to New Database
-console.log(boxen('Lines & LinesSub (originally LineGroups, Lines & LineStations)'));
+console.log(boxen('Lines (originally LineGroups, Lines & LineStations)'));
 
 for (let id in lines){
     const line_subs = lines[id];
@@ -95,18 +94,24 @@ for (let id in lines){
     const line_name_eng = line.line_group_id ? line.g_name_eng : line.name_eng;
     const line_name_eng_short = line.g_name_eng_short || line.name_eng_short;
     const line_id = uuid();
+
     let line_data = {
         id: line_id,
         line_type_id: line_types_id_uuid[line.line_type_id],
+        operator_id: line.operator_id,
+        color: line.color,
+        color_text: line.color_text,
         name_chi: line_name_chi,
         name_eng: line_name_eng,
         name_short_eng: line_name_eng_short,
         remarks: line.remarks,
+        max_speed_kph: line.max_speed_kph,
+        sections: [],
         _data: {
             length_km: 0,
             x_min: null, x_max: null,
             y_min: null, y_max: null,
-            operator_ids: '',
+            station_ids: '',
         },
     };
     console.log(chalk.yellow(`[Line] `) + `${line_name_chi} / ${line_name_eng}`);
@@ -116,6 +121,7 @@ for (let id in lines){
     let x = [];
     let y = [];
     let lengths = [];
+
     for (let line_sub of line_subs){
 
         //Prepare Sections -> Stations
@@ -136,58 +142,41 @@ for (let id in lines){
                 scheduling: {},
                 distance_km: section.distance_km,
                 mileage_km: section.mileage_km,
-                _data: {
-                    x_min: !section.segments.length ? null
-                            : $.getLongitude(Math.min(...section.segments.map(segment => segment.x))),
-                    x_max: !section.segments.length ? null
-                            : $.getLongitude(Math.max(...section.segments.map(segment => segment.x))),
-                    y_max: !section.segments.length ? null
-                            : $.getLatitude(Math.min(...section.segments.map(segment => segment.y))),
-                    y_min: !section.segments.length ? null
-                            : $.getLatitude(Math.max(...section.segments.map(segment => segment.y))),
-                },
+                x_min: !section.segments.length ? null
+                        : $.getLongitude(Math.min(...section.segments.map(segment => segment.x))),
+                x_max: !section.segments.length ? null
+                        : $.getLongitude(Math.max(...section.segments.map(segment => segment.x))),
+                y_max: !section.segments.length ? null
+                        : $.getLatitude(Math.min(...section.segments.map(segment => segment.y))),
+                y_min: !section.segments.length ? null
+                        : $.getLatitude(Math.max(...section.segments.map(segment => segment.y))),
             };
         });
-        
-        //Make Line Section Item
+
+        //Prepare LineSub -> Section
         const subline_name_chi = line.line_group_id ? $.getTextInsideBracket(line_sub.name_chi) : null;
         const subline_name_eng = line.line_group_id ? $.getTextInsideBracket(line_sub.name_eng) : null;
-        const operator_id = operator_id_mapping[line_sub.operator_id];
         x.push($.getLongitude(line_sub.x_min), $.getLongitude(line_sub.x_max));
         y.push($.getLatitude(line_sub.y_min), $.getLatitude(line_sub.y_max));
         lengths.push(line_sub.length_km);
-        let line_section_data = {
-            id: line_sub.id,
-            line_id: line_id,
-            operator_id: operator_id,
+
+        let section = {
             name_chi: subline_name_chi,
             name_eng: subline_name_eng,
-            color: line_sub.color,
-            color_text: line_sub.color_text,
-            remarks: line_sub.remarks,
-            max_speed_kph: line_sub.max_speed_kph,
             stations: stations,
-            sort_in_line: subline_name_chi ? 2 : 1,
-            _data: {
-                length_km: line_sub.length_km,
-                x_min: $.getLongitude(line_sub.x_min),
-                x_max: $.getLongitude(line_sub.x_max),
-                y_min: $.getLatitude(line_sub.y_max),
-                y_max: $.getLatitude(line_sub.y_min),
-                station_ids: stations.map((section) => section.station_id)
-                .map(id => (id ? `|${id}` : '')).join(''),
-            },
+            length_km: line_sub.length_km,
+            x_min: $.getLongitude(line_sub.x_min),
+            x_max: $.getLongitude(line_sub.x_max),
+            y_min: $.getLatitude(line_sub.y_max),
+            y_max: $.getLatitude(line_sub.y_min),
         };
-        sub_items.push(line_section_data);
+        line_data.sections.push(section);
 
         if (subline_name_chi || subline_name_eng){
             console.log(chalk.blue(`[Sub] ${subline_name_chi} / ${subline_name_eng}`));
         }else{
             console.log(chalk.blue(`[Sub] #`));
         }
-        
-        //Insert to line_sections
-        await $.insertData(client_new, 'line_sections', line_section_data);
 
     }
 
@@ -195,13 +184,14 @@ for (let id in lines){
     line_data._data.length_km = lengths.filter(Number.isFinite)
     .reduce((prev, curr) => (prev + curr), 0);
     line_data._data.length_km = parseFloat(line_data._data.length_km.toFixed(1));
-    line_data._data.operator_ids = sub_items.map(item => `|${item.operator_id}`)
-    .filter((val, index, self) => (self.indexOf(val) === index)).join('');
     line_data._data.x_min = Math.min(...x.filter(Number.isFinite)),
     line_data._data.x_max = Math.max(...x.filter(Number.isFinite)),
     line_data._data.y_min = Math.min(...y.filter(Number.isFinite)),
     line_data._data.y_max = Math.max(...y.filter(Number.isFinite)),
-
+    line_data._data.station_ids = line_data.sections.map(section => (
+        section.stations.map(station => '|' + station.station_id).join('')
+    )).join('');
+    
     //Insert to lines
     await $.insertData(client_new, 'lines', line_data);
 

@@ -20,14 +20,14 @@ for (let item of prefecture_areas){
 }
 
 //Remove Old Items
-await client_new.query('TRUNCATE hongon_hongon_regions_broader', []);
+await client_new.query('TRUNCATE hongon_hongon_region_groups', []);
 
 //Insert to New Database
 console.log(boxen('Regions Broader (originally Prefecture Areas)'));
 
 for (let i = 0; i < prefecture_areas.length; i++){
     const item = prefecture_areas[i];
-    await $.insertData(client_new, 'regions_broader', {
+    await $.insertData(client_new, 'region_groups', {
         id: id_to_uuid[item.id],
         name_chi: item.name_chi,
         name_eng: item.name_eng,
