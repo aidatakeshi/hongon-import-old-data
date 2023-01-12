@@ -98,7 +98,7 @@ for (let id in lines){
     let line_data = {
         id: line_id,
         line_type_id: line_types_id_uuid[line.line_type_id],
-        operator_id: line.operator_id,
+        operator_id: operator_id_mapping[line.operator_id],
         color: line.color,
         color_text: line.color_text,
         name_chi: line_name_chi,
